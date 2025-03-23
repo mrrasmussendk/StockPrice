@@ -1,0 +1,81 @@
+﻿@startuml
+title Stock Price Offering - Class Diagram
+
+' Domain Layer
+interface IStockPriceObserver {
+    +UpdateStockPrice(id: string, price: decimal)
+}
+
+interface IStockPriceSubject {
+    +Subscribe(id: string, observer: IStockPriceObserver)
+    +Unsubscribe(id: string, observer: IStockPriceObserver)
+    +NotifyObservers(id: string, price: decimal)
+}
+
+class Stock {
+    -Ticker: string
+    -Price: decimal
+    -UpdatedAt: DateTime
+    +UpdatePrice(newPrice: decimal)
+}
+
+' Application Layer
+class StockDto {
+    +Id: string
+    +Price: decimal
+    +UpdatedAt: DateTime
+}
+
+interface IStockRepository {
+    +GetStockPrice(ticker: string): decimal
+    +UpdateStockPrice(ticker: string, price: decimal)
+    +GetAllStocks(): List<StockDto>
+}
+
+interface IStockUseCase {
+    +GetStockPrice(ticker: string): StockDto
+    +UpdateStockPrice(ticker: string, price: decimal)
+    +GetAllStocks(): List<StockDto>
+}
+
+class StockUseCase {
+    -_stockPriceNotifier: IStockPriceSubject
+    -_stockRepository: IStockRepository
+    +GetStockPrice(ticker: string): StockDto
+    +UpdateStockPrice(ticker: string, price: decimal)
+    +GetAllStocks(): List<StockDto>
+}
+
+' Infrastructure Layer
+class StockPriceNotifier {
+    +Subscribe(id: string, observer: IStockPriceObserver)
+    +Unsubscribe(id: string, observer: IStockPriceObserver)
+    +NotifyObservers(id: string, price: decimal)
+}
+
+class InMemoryStockRepository {
+    +GetStockPrice(ticker: string): decimal
+    +UpdateStockPrice(ticker: string, price: decimal)
+    +GetAllStocks(): List<StockDto>
+}
+
+interface IWebSocketHandler {
+    +HandleConnection(socket, id: string)
+}
+
+class StockWebSocketHandler {
+    +HandleConnection(socket, id: string)
+    +UpdateStockPrice(id: string, price: decimal)
+}
+
+' Relationships
+StockUseCase --> IStockUseCase
+StockUseCase --> IStockPriceSubject
+StockUseCase --> IStockRepository
+
+StockPriceNotifier ..|> IStockPriceSubject
+StockWebSocketHandler ..|> IStockPriceObserver
+StockWebSocketHandler ..|> IWebSocketHandler
+InMemoryStockRepository ..|> IStockRepository
+
+@enduml
